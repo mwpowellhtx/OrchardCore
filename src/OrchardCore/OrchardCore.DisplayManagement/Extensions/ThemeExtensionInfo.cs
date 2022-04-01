@@ -7,6 +7,7 @@ namespace OrchardCore.DisplayManagement.Extensions
 {
     public interface IThemeExtensionInfo : IExtensionInfo { }
 
+    // TODO: MWP: considering ThemeAttribute is also a ModuleAttribute, should it also derive from at least a FeatureInfo?
     public class ThemeExtensionInfo : IThemeExtensionInfo
     {
         private readonly IExtensionInfo _extensionInfo;
@@ -15,13 +16,9 @@ namespace OrchardCore.DisplayManagement.Extensions
         {
             _extensionInfo = extensionInfo;
 
+            // No need to do any further verification since the attributes themselves handle that on the front end
             var themeInfo = _extensionInfo.Manifest.ModuleInfo as ThemeAttribute;
-            var baseTheme = themeInfo?.BaseTheme;
-
-            if (baseTheme != null && baseTheme.Length != 0)
-            {
-                BaseTheme = baseTheme.Trim().ToString();
-            }
+            BaseTheme = themeInfo?.BaseTheme;
         }
 
         public string Id => _extensionInfo.Id;

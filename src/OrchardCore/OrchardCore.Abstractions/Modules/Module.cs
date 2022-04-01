@@ -5,10 +5,11 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders.Embedded;
-using OrchardCore.Modules.Manifest;
 
 namespace OrchardCore.Modules
 {
+    using Manifest;
+
     public class Module
     {
         public const string WebRootPath = "wwwroot";
@@ -34,7 +35,7 @@ namespace OrchardCore.Modules
                 ModuleInfo =
                     moduleInfos.Where(f => !(f is ModuleMarkerAttribute)).FirstOrDefault() ??
                     moduleInfos.Where(f => f is ModuleMarkerAttribute).FirstOrDefault() ??
-                    new ModuleAttribute { Name = name };
+                    new ModuleAttribute("", name);
 
                 var features = Assembly.GetCustomAttributes<Manifest.FeatureAttribute>()
                     .Where(f => !(f is ModuleAttribute)).ToList();
@@ -48,26 +49,24 @@ namespace OrchardCore.Modules
                     ModuleInfo.DefaultTenantOnly = true;
 
                     // Adds the application primary feature.
-                    features.Insert(0, new Manifest.FeatureAttribute()
-                    {
-                        Id = name,
-                        Name = Application.ModuleName,
-                        Description = Application.ModuleDescription,
-                        Priority = Application.ModulePriority,
-                        Category = Application.ModuleCategory,
-                        DefaultTenantOnly = true
-                    });
+                    features.Insert(0, new Manifest.FeatureAttribute(
+                        id: name
+                        , name: Application.ModuleName
+                        , category: Application.ModuleCategory
+                        , priority: Application.ModulePriority
+                        , description: Application.ModuleDescription
+                        , defaultTenant: true)
+                    );
 
                     // Adds the application default feature.
-                    features.Insert(1, new Manifest.FeatureAttribute()
-                    {
-                        Id = Application.DefaultFeatureId,
-                        Name = Application.DefaultFeatureName,
-                        Description = Application.DefaultFeatureDescription,
-                        Priority = Application.ModulePriority,
-                        Category = Application.ModuleCategory,
-                        DefaultTenantOnly = true
-                    });
+                    features.Insert(1, new Manifest.FeatureAttribute(
+                        id: Application.DefaultFeatureId
+                        , name: Application.DefaultFeatureName
+                        , category: Application.ModuleCategory
+                        , priority: Application.ModulePriority
+                        , description: Application.DefaultFeatureDescription
+                        , defaultTenant: true)
+                    );
                 }
 
                 ModuleInfo.Features.AddRange(features);

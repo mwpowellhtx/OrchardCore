@@ -2,6 +2,7 @@ using System;
 
 namespace OrchardCore.Modules
 {
+    // TODO: TBD: potential name collision with abstractions?
     /// <summary>
     /// An attribute that can associate a service or component with
     /// a specific feature by its name. This component will only

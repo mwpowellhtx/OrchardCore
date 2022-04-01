@@ -4,6 +4,8 @@ using System.Linq;
 
 namespace OrchardCore.Environment.Extensions.Features
 {
+    using Modules.Manifest;
+
     public class FeaturesProvider : IFeaturesProvider
     {
         public const string FeatureProviderStateKey = "FeatureProvider:Features";
@@ -19,6 +21,8 @@ namespace OrchardCore.Environment.Extensions.Features
         {
             var featuresInfos = new List<IFeatureInfo>();
 
+            const int defaultPriority = FeatureAttribute.DefaultPriority;
+
             // Features and Dependencies live within this section
             var features = manifestInfo.ModuleInfo.Features.ToList();
             if (features.Count > 0)
@@ -31,18 +35,17 @@ namespace OrchardCore.Environment.Extensions.Features
                             $"A feature is missing a mandatory 'Id' property in the Module '{extensionInfo.Id}'");
                     }
 
+                    // TODO: TBD: was there a migration path involving 'ModuleAttribute.Type' at any point?
+                    // Attribute properties are now internally resolved for convenience
                     var featureId = feature.Id;
-                    var featureName = feature.Name ?? feature.Id;
+                    var featureName = feature.Name;
 
-                    var featureDependencyIds = feature.Dependencies
-                        .Select(e => e.Trim()).ToArray();
+                    var featureDependencyIds = feature.Dependencies;
 
-                    if (!Int32.TryParse(feature.Priority ?? manifestInfo.ModuleInfo.Priority, out var featurePriority))
-                    {
-                        featurePriority = 0;
-                    }
+                    // Simplified dealing with Priority parsing, transparent now via the attribute itself
+                    var featurePriority = feature.InternalPriority ?? manifestInfo.ModuleInfo.InternalPriority;
 
-                    var featureCategory = feature.Category ?? manifestInfo.ModuleInfo.Category;
+                    var featureCategory = FeatureAttribute.Categorize(feature, manifestInfo.ModuleInfo);
                     var featureDescription = feature.Description ?? manifestInfo.ModuleInfo.Description;
                     var featureDefaultTenantOnly = feature.DefaultTenantOnly;
                     var featureIsAlwaysEnabled = feature.IsAlwaysEnabled;
@@ -55,7 +58,7 @@ namespace OrchardCore.Environment.Extensions.Features
                         Description = featureDescription,
                         ExtensionInfo = extensionInfo,
                         ManifestInfo = manifestInfo,
-                        Priority = featurePriority,
+                        Priority = featurePriority ?? defaultPriority,
                         FeatureDependencyIds = featureDependencyIds,
                         DefaultTenantOnly = featureDefaultTenantOnly,
                         IsAlwaysEnabled = featureIsAlwaysEnabled
@@ -66,6 +69,7 @@ namespace OrchardCore.Environment.Extensions.Features
                         builder.Building(context);
                     }
 
+                    // TODO: TBD: bit broader discussion, wondering whether FeatureInfo should just fall out of FeatureAttribute, in the aggregate
                     var featureInfo = new FeatureInfo(
                         context.FeatureId,
                         context.FeatureName,
@@ -91,13 +95,8 @@ namespace OrchardCore.Environment.Extensions.Features
                 var featureId = extensionInfo.Id;
                 var featureName = manifestInfo.Name;
 
-                var featureDependencyIds = manifestInfo.ModuleInfo.Dependencies
-                    .Select(e => e.Trim()).ToArray();
-
-                if (!Int32.TryParse(manifestInfo.ModuleInfo.Priority, out var featurePriority))
-                {
-                    featurePriority = 0;
-                }
+                var featureDependencyIds = manifestInfo.ModuleInfo.Dependencies;
+                var featurePriority = manifestInfo.ModuleInfo.InternalPriority;
 
                 var featureCategory = manifestInfo.ModuleInfo.Category;
                 var featureDescription = manifestInfo.ModuleInfo.Description;
@@ -112,7 +111,7 @@ namespace OrchardCore.Environment.Extensions.Features
                     Description = featureDescription,
                     ExtensionInfo = extensionInfo,
                     ManifestInfo = manifestInfo,
-                    Priority = featurePriority,
+                    Priority = featurePriority ?? defaultPriority,
                     FeatureDependencyIds = featureDependencyIds,
                     DefaultTenantOnly = featureDefaultTenantOnly,
                     IsAlwaysEnabled = featureIsAlwaysEnabled
